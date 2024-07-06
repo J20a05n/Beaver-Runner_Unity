@@ -6,6 +6,7 @@ Logs/
 UserSettings/
 Temp/
 ProjectSettings/
-OBI/Runner.sln
+OBI_Runner.sln
 Beaver-Runner_Unity.sln
 Assembly-CSharp.csproj
+ignore.conf
