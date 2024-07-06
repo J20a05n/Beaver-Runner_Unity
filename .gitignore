@@ -1,0 +1,11 @@
+WebGL_Builds/
+.plastic/
+.vscode/
+Library/
+Logs/
+UserSettings/
+Temp/
+ProjectSettings/
+OBI/Runner.sln
+Beaver-Runner_Unity.sln
+Assembly-CSharp.csproj
