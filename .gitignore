@@ -10,3 +10,4 @@ OBI_Runner.sln
 Beaver-Runner_Unity.sln
 Assembly-CSharp.csproj
 ignore.conf
+obj/

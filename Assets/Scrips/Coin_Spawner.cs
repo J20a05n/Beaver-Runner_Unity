@@ -12,6 +12,8 @@ public class Coin_Spawner : MonoBehaviour
     public float minY = -3f; // Minimum y position
     public float maxY = 3f;  // Maximum y position
     PlayerCollision pc;
+    GameObject obstacleToSpawn;
+    bool onFire;
 
     private float timeUntilObstacleSpawn;
     private void Start()
@@ -35,8 +37,13 @@ public class Coin_Spawner : MonoBehaviour
     }
 
     private void Spawn() {
-        GameObject obstacleToSpawn = obstaclePrefabs[Random.Range(0,obstaclePrefabs.Length)];
-
+        if(onFire) {
+            obstacleToSpawn = obstaclePrefabs[Random.Range(2,obstaclePrefabs.Length)];
+        }
+        else {
+            obstacleToSpawn = obstaclePrefabs[Random.Range(0,obstaclePrefabs.Length)];
+        }
+        
         float randomY = Random.Range(minY, maxY);
         Vector3 spawnPos = new Vector3(transform.position.x, randomY, transform.position.z);
 
@@ -60,11 +67,13 @@ public class Coin_Spawner : MonoBehaviour
     }
 
     private IEnumerator FireModifierCoroutine() {
+        onFire = true;
         obstacleSpeed = obstacleSpeed * obstacleSpeedModifier;
         obstacleSpawnTime = obstacleSpawnTime / obstacleSpeedModifier;
         yield return new WaitForSeconds(5);
         obstacleSpeed = obstacleSpeed / obstacleSpeedModifier;
         obstacleSpawnTime = obstacleSpawnTime * obstacleSpeedModifier;
+        onFire = false;
     }
     
 }

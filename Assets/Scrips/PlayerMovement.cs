@@ -24,7 +24,14 @@ public class PlayerMovement : MonoBehaviour
     private bool isGrounded = false;
     private bool isJumping = false;
     private float jumpTimer;
+    private float startTime;
     private bool isPlaying;
+    public float minSwipeDistY;
+    bool touchJump;
+
+	public float minSwipeDistX;
+		
+	private Vector2 startPos;
     GameManager gm;
 
     private void Start() {
@@ -43,14 +50,14 @@ public class PlayerMovement : MonoBehaviour
             animator.SetBool("isMidAir", false);
             animator.SetBool("isMoving", true);
         }
-        if (isGrounded && Input.GetButtonDown("Jump")) {
+        if (isGrounded && (Input.GetButtonDown("Jump") || touchJump)) {
             player_jumps.Play();
             animator.SetBool("isJumping", true);
             isJumping = true;
             rb2d.velocity = Vector2.up * jumpForce;
         }
 
-        if (isJumping && Input.GetButton("Jump")) {
+        if (isJumping && (Input.GetButton("Jump") || touchJump)) {
             
             if (jumpTimer < jumpTime) {
                 rb2d.velocity = Vector2.up * jumpForce;
@@ -61,7 +68,7 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        if (Input.GetButtonUp("Jump")) {
+        if (Input.GetButtonUp("Jump") || touchJump) {
             animator.SetBool("isJumping", false);
             animator.SetBool("isMidAir", true);
             isJumping = false;
@@ -98,5 +105,54 @@ public class PlayerMovement : MonoBehaviour
             playerCollider.size = originalColliderSize;
             playerCollider.offset = originalColliderOffset;
         }
+
+        
+        //Mobile Controlls
+        if (Input.touchCount > 0) {
+            Debug.Log("touch");
+			
+			Touch touch = Input.touches[0];
+			
+			switch (touch.phase) {
+				
+			case TouchPhase.Began:
+
+				startTime = Time.time;
+				
+				startPos = touch.position;
+				
+				break;
+
+			case TouchPhase.Ended:
+
+					float swipeDistVertical = (new Vector3(0, touch.position.y, 0) - new Vector3(0, startPos.y, 0)).magnitude;
+                    float swipeDuration = Time.time - startTime;
+                    float adjustedJumpForce = CalculateAdjustedJumpForce(swipeDistVertical, swipeDuration);
+
+					if (swipeDistVertical > minSwipeDistY) {
+                        float swipeValue = Mathf.Sign(touch.position.y - startPos.y);
+                        if (swipeValue > 0 && isGrounded) { // up swipe
+                            Debug.Log("Swipe Up");
+                            touchJump = true;
+                            // Apply the adjusted jump force
+                            rb2d.velocity = Vector2.up * adjustedJumpForce;
+                        }
+                    }
+                break;
+			}
+		}else {
+            touchJump = false;
+        }
+    }
+    private float CalculateAdjustedJumpForce(float swipeDist, float swipeDuration)
+    {
+        // Example calculation: increase jump force linearly with swipe distance and duration
+        float calculatedForce = jumpForce + (swipeDist * swipeDuration * 1f);
+
+        // Define the maximum allowed jump force
+        float maxJumpForce = 25f; // Set this to your desired maximum jump force
+
+        // Clamp the calculated force to ensure it doesn't exceed the maximum
+        return Mathf.Clamp(calculatedForce, jumpForce, maxJumpForce);
     }
 }
