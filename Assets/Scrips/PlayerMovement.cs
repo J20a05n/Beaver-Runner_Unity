@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -22,17 +20,16 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 originalColliderSize;
     private Vector2 originalColliderOffset;
     private bool isGrounded = false;
-    private bool isJumping = false;
+    [SerializeField] private bool isJumping = false;
     private float jumpTimer;
     private float startTime;
     private bool isPlaying;
-    public float minSwipeDistY;
-    bool touchJump;
-
-	public float minSwipeDistX;
-		
+    public bool touchJump;
+    public bool touchSlide;
 	private Vector2 startPos;
     GameManager gm;
+
+
 
     private void Start() {
         gm = GameManager.Instance;
@@ -43,6 +40,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     private void Update() {
+
         isGrounded = Physics2D.OverlapCircle(feetPos.position, groundDistance, groundLayer);
         isPlaying = gm.isPlaying;
 
@@ -50,7 +48,18 @@ public class PlayerMovement : MonoBehaviour
             animator.SetBool("isMidAir", false);
             animator.SetBool("isMoving", true);
         }
-        if (isGrounded && (Input.GetButtonDown("Jump") || touchJump)) {
+        //if ((Input.GetButtonDown("Jump") || touchJump) && !isJumping)
+        if (isGrounded && (Input.GetButtonDown("Jump") || touchJump))
+        {
+            touchJump = true;
+            player_jumps.Play();
+            animator.SetBool("isJumping", true);
+            isJumping = true;
+            rb2d.velocity = Vector2.up * jumpForce;
+        }
+
+        if (touchJump && isGrounded)
+        {
             player_jumps.Play();
             animator.SetBool("isJumping", true);
             isJumping = true;
@@ -59,23 +68,33 @@ public class PlayerMovement : MonoBehaviour
 
         if (isJumping && (Input.GetButton("Jump") || touchJump)) {
             
+            touchJump = true;
             if (jumpTimer < jumpTime) {
                 rb2d.velocity = Vector2.up * jumpForce;
+                Debug.Log(rb2d.velocity);
 
                 jumpTimer += Time.deltaTime;
             } else {
+                touchJump = false;
                 isJumping = false;
             }
         }
-
-        if (Input.GetButtonUp("Jump") || touchJump) {
+        if (Input.GetButtonUp("Jump") || !touchJump) {
+            Debug.Log("Getting Button Up");
             animator.SetBool("isJumping", false);
             animator.SetBool("isMidAir", true);
+            touchJump = false;
             isJumping = false;
             jumpTimer = 0;
         }
 
-        if (isGrounded && Input.GetButton("Slide")) {
+        if(isGrounded)
+        {
+            animator.SetBool("isMoving", true);
+            animator.SetBool("isJumping", false);
+            animator.SetBool("isMidAir", false);
+        }
+        if (isGrounded && /*(Input.GetButton("Slide") ||*/ touchSlide)/*)*/ {
             animator.SetBool("isSliding", true);
             animator.SetBool("isMoving", false);
             
@@ -95,7 +114,7 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        if (Input.GetButtonUp("Slide")) {
+        if (!touchSlide /* || Input.GetButtonUp("Slide")*/) {
             animator.SetBool("isSliding", false);
             animator.SetBool("isMoving", true);
 
@@ -105,54 +124,5 @@ public class PlayerMovement : MonoBehaviour
             playerCollider.size = originalColliderSize;
             playerCollider.offset = originalColliderOffset;
         }
-
-        
-        //Mobile Controlls
-        if (Input.touchCount > 0) {
-            Debug.Log("touch");
-			
-			Touch touch = Input.touches[0];
-			
-			switch (touch.phase) {
-				
-			case TouchPhase.Began:
-
-				startTime = Time.time;
-				
-				startPos = touch.position;
-				
-				break;
-
-			case TouchPhase.Ended:
-
-					float swipeDistVertical = (new Vector3(0, touch.position.y, 0) - new Vector3(0, startPos.y, 0)).magnitude;
-                    float swipeDuration = Time.time - startTime;
-                    float adjustedJumpForce = CalculateAdjustedJumpForce(swipeDistVertical, swipeDuration);
-
-					if (swipeDistVertical > minSwipeDistY) {
-                        float swipeValue = Mathf.Sign(touch.position.y - startPos.y);
-                        if (swipeValue > 0 && isGrounded) { // up swipe
-                            Debug.Log("Swipe Up");
-                            touchJump = true;
-                            // Apply the adjusted jump force
-                            rb2d.velocity = Vector2.up * adjustedJumpForce;
-                        }
-                    }
-                break;
-			}
-		}else {
-            touchJump = false;
-        }
-    }
-    private float CalculateAdjustedJumpForce(float swipeDist, float swipeDuration)
-    {
-        // Example calculation: increase jump force linearly with swipe distance and duration
-        float calculatedForce = jumpForce + (swipeDist * swipeDuration * 1f);
-
-        // Define the maximum allowed jump force
-        float maxJumpForce = 25f; // Set this to your desired maximum jump force
-
-        // Clamp the calculated force to ensure it doesn't exceed the maximum
-        return Mathf.Clamp(calculatedForce, jumpForce, maxJumpForce);
     }
 }
